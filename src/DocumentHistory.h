@@ -1,6 +1,6 @@
 /***********************************************************************
  *
- * Copyright (C) 2014, 2015 wereturtle
+ * Copyright (C) 2014-2016 wereturtle
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,6 +44,18 @@ class DocumentHistory
         ~DocumentHistory();
 
         /**
+         * Gets whether the last file in the history was a new, untitled
+         * document that was "hot saved" on exiting the application.
+         */
+        bool getLastFileUntitled();
+
+        /**
+         * Sets whether the last file in the history was a new, untitled
+         * document that was "hot saved" on exiting the application.
+         */
+        void setLastFileUntitled(bool untitled);
+
+        /**
          * Returns the list of recent files, up to the maximum number specified.
          * Specify a value of -1 to get the entire history.
          */
@@ -73,6 +85,8 @@ class DocumentHistory
         void recentFilesChanged();
 
     private:
+        bool lastFileUntitled;
+
         /*
          * Encapsulates the file path/cursor position as a pair.
          */

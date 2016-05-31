@@ -48,6 +48,7 @@ class AppSettings
         QString getThemeDirectoryPath() const;
         QString getDictionaryPath() const;
         QString getTranslationsPath() const;
+        QString getUntitledDocumentPath() const;
 
         bool getAutoSaveEnabled() const;
         void setAutoSaveEnabled(bool enabled);
@@ -152,6 +153,7 @@ class AppSettings
         QString themeDirectoryPath;
         QString dictionaryPath;
         QString translationsPath;
+        QString untitledDocumentPath;
 
         QFont defaultFont;
         bool autoSaveEnabled;

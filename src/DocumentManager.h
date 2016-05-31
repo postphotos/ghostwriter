@@ -50,6 +50,7 @@ class DocumentManager : public QObject
         DocumentManager
         (
             MarkdownEditor* editor,
+            const QString& untitledDocumentPath,
             DocumentStatistics* documentStats,
             SessionStatistics* sessionStats,
             QWidget* parent = 0
@@ -152,7 +153,7 @@ class DocumentManager : public QObject
          * Prompts the user for a file path, and loads the document with the
          * file contents at the selected path.
          */
-        void open(const QString& filePath = QString());
+        void open(const QString& filePath = QString(), bool isUntitled = false);
 
         /**
          * Reopens the last closed file, if any is available in the document
@@ -235,6 +236,7 @@ class DocumentManager : public QObject
         QFileSystemWatcher* fileWatcher;
         bool fileHistoryEnabled;
         bool createBackupOnSave;
+        QString untitledDocumentPath;
 
         /*
          * Used to set default page layout options for printing.  Also,
@@ -261,7 +263,7 @@ class DocumentManager : public QObject
         /*
          * Loads the document with the file contents at the given path.
          */
-        bool loadFile(const QString& filePath);
+        bool loadFile(const QString& filePath, bool isUntitled = false);
 
         /*
          * Sets the file path for the document, such that the file will be

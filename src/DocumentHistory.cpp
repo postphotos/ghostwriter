@@ -1,6 +1,6 @@
 /***********************************************************************
  *
- * Copyright (C) 2014, 2015 wereturtle
+ * Copyright (C) 2014-2016 wereturtle
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,15 +29,28 @@
 #define FILE_HISTORY_KEY "FileHistory"
 #define FILE_PATH_KEY "filePath"
 #define CURSOR_POSITION_KEY "cursorPosition"
+#define LAST_FILE_UNTITLED_KEY "lastFileUntitled"
 
 DocumentHistory::DocumentHistory()
 {
-
+    QSettings settings;
+    lastFileUntitled = settings.value(LAST_FILE_UNTITLED_KEY, false).toBool();
 }
 
 DocumentHistory::~DocumentHistory()
 {
+    QSettings settings;
+    settings.setValue(LAST_FILE_UNTITLED_KEY, lastFileUntitled);
+}
 
+bool DocumentHistory::getLastFileUntitled()
+{
+    return lastFileUntitled;
+}
+
+void DocumentHistory::setLastFileUntitled(bool untitled)
+{
+    lastFileUntitled = untitled;
 }
 
 QStringList DocumentHistory::getRecentFiles(int max)

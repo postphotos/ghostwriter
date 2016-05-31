@@ -87,6 +87,7 @@ MainWindow::MainWindow(const QString& filePath, QWidget* parent)
     : QMainWindow(parent)
 {
     QString fileToOpen;
+    DocumentHistory history;
     setWindowIcon(QIcon(":/resources/images/ghostwriter.svg"));
     this->setObjectName("mainWindow");
     this->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
@@ -219,7 +220,7 @@ MainWindow::MainWindow(const QString& filePath, QWidget* parent)
     connect(editor, SIGNAL(typingPaused()), sessionStats, SLOT(onTypingPaused()));
     connect(editor, SIGNAL(typingResumed()), sessionStats, SLOT(onTypingResumed()));
 
-    documentManager = new DocumentManager(editor, documentStats, sessionStats, this);
+    documentManager = new DocumentManager(editor, appSettings->getUntitledDocumentPath(), documentStats, sessionStats, this);
     documentManager->setAutoSaveEnabled(appSettings->getAutoSaveEnabled());
     documentManager->setFileBackupEnabled(appSettings->getBackupFileEnabled());
     documentManager->setFileHistoryEnabled(appSettings->getFileHistoryEnabled());
@@ -255,7 +256,6 @@ MainWindow::MainWindow(const QString& filePath, QWidget* parent)
 
     if (appSettings->getFileHistoryEnabled())
     {
-        DocumentHistory history;
         recentFiles = history.getRecentFiles(MAX_RECENT_FILES + 2);
     }
 
@@ -275,19 +275,26 @@ MainWindow::MainWindow(const QString& filePath, QWidget* parent)
         }
     }
 
-    if (fileToOpen.isNull() && appSettings->getFileHistoryEnabled())
+    if (fileToOpen.isNull())
     {
-        QString lastFile;
-
-        if (!recentFiles.isEmpty())
+        if (history.getLastFileUntitled())
         {
-            lastFile = recentFiles.first();
+            fileToOpen = appSettings->getUntitledDocumentPath();
         }
-
-        if (QFileInfo(lastFile).exists())
+        else if (appSettings->getFileHistoryEnabled())
         {
-            fileToOpen = lastFile;
-            recentFiles.removeAll(lastFile);
+            QString lastFile;
+
+            if (!recentFiles.isEmpty())
+            {
+                lastFile = recentFiles.first();
+            }
+
+            if (QFileInfo(lastFile).exists())
+            {
+                fileToOpen = lastFile;
+                recentFiles.removeAll(lastFile);
+            }
         }
     }
 
@@ -471,7 +478,7 @@ MainWindow::MainWindow(const QString& filePath, QWidget* parent)
 
     if (!fileToOpen.isNull() && !fileToOpen.isEmpty())
     {
-        documentManager->open(fileToOpen);
+        documentManager->open(fileToOpen, history.getLastFileUntitled());
     }
 }
 

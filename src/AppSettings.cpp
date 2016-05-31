@@ -134,6 +134,11 @@ QString AppSettings::getTranslationsPath() const
     return translationsPath;
 }
 
+QString AppSettings::getUntitledDocumentPath() const
+{
+    return untitledDocumentPath;
+}
+
 bool AppSettings::getAutoSaveEnabled() const
 {
     return autoSaveEnabled;
@@ -500,7 +505,7 @@ AppSettings::AppSettings()
             userDir + "/settings"
         );
 
-        translationsPath = userDir + "/translations";
+        translationsPath = appDir + "/translations";
     }
     else
     {
@@ -531,7 +536,10 @@ AppSettings::AppSettings()
                 break;
             }
         }
+
     }
+
+    untitledDocumentPath = userDir + "/untitled.txt";
 
     QDir themeDir(userDir + "/themes");
 

@@ -56,11 +56,13 @@ const QString DocumentManager::FILE_CHOOSER_FILTER =
 DocumentManager::DocumentManager
 (
     MarkdownEditor* editor,
+    const QString& untitledDocumentPath,
     DocumentStatistics* documentStats,
     SessionStatistics* sessionStats,
     QWidget* parent
 )
     : QObject(parent), parentWidget(parent), editor(editor),
+        untitledDocumentPath(untitledDocumentPath),
         documentStats(documentStats), sessionStats(sessionStats),
         fileHistoryEnabled(true), createBackupOnSave(true),
         saveInProgress(false)
@@ -136,8 +138,10 @@ void DocumentManager::setFileBackupEnabled(bool enabled)
     this->createBackupOnSave = enabled;
 }
 
-void DocumentManager::open(const QString& filePath)
+void DocumentManager::open(const QString& filePath, bool isUntitled)
 {
+    qWarning("filePath = %s, isUntitled = %d", filePath.toLatin1().data(), isUntitled);
+
     if (checkSaveChanges())
     {
         QString path;
@@ -185,7 +189,7 @@ void DocumentManager::open(const QString& filePath)
             int oldCursorPosition = editor->textCursor().position();
             bool oldFileWasNew = document->isNew();
 
-            if (!loadFile(path))
+            if (!loadFile(path, isUntitled))
             {
                 // The error dialog should already have been displayed
                 // in loadFile().
@@ -315,11 +319,15 @@ void DocumentManager::rename()
 
 bool DocumentManager::save()
 {
-    if (document->isNew())
+    if (document->isNew() && !autoSaveEnabled)
     {
         return saveAs();
     }
-    else if (checkPermissionsBeforeSave())
+    else if (!checkPermissionsBeforeSave())
+    {
+        return saveAs();
+    }
+    else
     {
         document->setModified(false);
         emit documentModifiedChanged(false);
@@ -335,9 +343,16 @@ bool DocumentManager::save()
 
         saveInProgress = true;
 
-        if (fileWatcher->files().contains(document->getFilePath()))
+        QString saveFilePath = document->getFilePath();
+
+        if (autoSaveEnabled && document->isNew())
         {
-            this->fileWatcher->removePath(document->getFilePath());
+            saveFilePath = untitledDocumentPath;
+        }
+
+        if (fileWatcher->files().contains(saveFilePath))
+        {
+            this->fileWatcher->removePath(saveFilePath);
         }
 
         document->setTimestamp(QDateTime::currentDateTime());
@@ -347,7 +362,7 @@ bool DocumentManager::save()
             (
                 this,
                 &DocumentManager::saveToDisk,
-                document->getFilePath(),
+                saveFilePath,
                 document->toPlainText(),
                 createBackupOnSave
             );
@@ -416,9 +431,19 @@ bool DocumentManager::close()
         documentStats->refreshStatistics();
         sessionStats->startNewSession(0);
 
+        DocumentHistory history;
+
+        if (documentIsNew && autoSaveEnabled)
+        {
+            history.setLastFileUntitled(true);
+        }
+        else
+        {
+            history.setLastFileUntitled(false);
+        }
+
         if (fileHistoryEnabled && !documentIsNew)
         {
-            DocumentHistory history;
             history.add
             (
                 filePath,
@@ -586,7 +611,7 @@ void DocumentManager::autoSaveFile()
     }
 }
 
-bool DocumentManager::loadFile(const QString& filePath)
+bool DocumentManager::loadFile(const QString& filePath, bool isUntitled)
 {
     QFileInfo fileInfo(filePath);
     QFile inputFile(filePath);
@@ -611,7 +636,16 @@ bool DocumentManager::loadFile(const QString& filePath)
     cursor.setPosition(0);
 
     QApplication::setOverrideCursor(Qt::WaitCursor);
-    emit operationStarted(tr("opening %1").arg(filePath));
+
+    if (isUntitled)
+    {
+        emit operationStarted(tr("opening untitled document"));
+    }
+    else
+    {
+        emit operationStarted(tr("opening %1").arg(filePath));
+    }
+
     QTextStream inStream(&inputFile);
 
     // Markdown files need to be in UTF-8 format, so assume that is
@@ -673,7 +707,15 @@ bool DocumentManager::loadFile(const QString& filePath)
         editor->navigateDocument(0);
     }
 
-    setFilePath(filePath);
+    if (isUntitled)
+    {
+        setFilePath(QString());
+    }
+    else
+    {
+        setFilePath(filePath);
+    }
+
     editor->setReadOnly(false);
 
     if (!fileInfo.isWritable())
@@ -712,6 +754,10 @@ void DocumentManager::setFilePath(const QString& filePath)
     {
         fileWatcher->removePath(document->getFilePath());
     }
+    else
+    {
+        fileWatcher->removePath(untitledDocumentPath);
+    }
 
     document->setFilePath(filePath);
 
@@ -740,7 +786,7 @@ bool DocumentManager::checkSaveChanges()
 {
     if (document->isModified())
     {
-        if (autoSaveEnabled && !document->isNew() && !document->isReadOnly())
+        if (autoSaveEnabled && !document->isReadOnly())
         {
             return save();
         }
@@ -796,31 +842,52 @@ bool DocumentManager::checkPermissionsBeforeSave()
 {
     if (document->isReadOnly())
     {
-        int response =
-            MessageBoxHelper::question
-            (
-                parentWidget,
-                tr("%1 is read only.").arg(document->getFilePath()),
-                tr("Overwrite protected file?"),
-                QMessageBox::Yes | QMessageBox::No,
-                QMessageBox::Yes
-            );
+        QString saveFilePath = document->getFilePath();
 
-        if (QMessageBox::No == response)
+        if (document->isNew() && autoSaveEnabled)
         {
-            return saveAs();
+            saveFilePath = untitledDocumentPath;
         }
         else
         {
-            QFile file(document->getFilePath());
-            fileWatcher->removePath(document->getFilePath());
+            int response =
+                MessageBoxHelper::question
+                (
+                    parentWidget,
+                    tr("%1 is read only.").arg(document->getFilePath()),
+                    tr("Overwrite protected file?"),
+                    QMessageBox::Yes | QMessageBox::No,
+                    QMessageBox::Yes
+                );
 
-            if (!file.remove())
+            if (QMessageBox::No == response)
             {
-                if (file.setPermissions(QFile::WriteUser | QFile::ReadUser) && file.remove())
+                return false;
+            }
+        }
+
+        QFile file(saveFilePath);
+        fileWatcher->removePath(saveFilePath);
+
+        if (!file.remove())
+        {
+            if (file.setPermissions(QFile::WriteUser | QFile::ReadUser) && file.remove())
+            {
+                document->setReadOnly(false);
+                return true;
+            }
+            else
+            {
+                QString saveAsRequestText = tr("Please save file to another location.");
+
+                if (document->isNew() && autoSaveEnabled)
                 {
-                    document->setReadOnly(false);
-                    return true;
+                    MessageBoxHelper::critical
+                    (
+                        parentWidget,
+                        tr("Untitled document backup file is read only."),
+                        saveAsRequestText
+                    );
                 }
                 else
                 {
@@ -828,17 +895,17 @@ bool DocumentManager::checkPermissionsBeforeSave()
                     (
                         parentWidget,
                         tr("Overwrite failed."),
-                        tr("Please save file to another location.")
+                        saveAsRequestText
                     );
-
-                    fileWatcher->addPath(document->getFilePath());
-                    return false;
                 }
+
+                fileWatcher->addPath(saveFilePath);
+                return false;
             }
-            else
-            {
-                document->setReadOnly(false);
-            }
+        }
+        else
+        {
+            document->setReadOnly(false);
         }
     }
 
