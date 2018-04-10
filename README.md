@@ -25,19 +25,25 @@ Linux
 
 If you are running Ubuntu or one of its derivatives (Linux Mint, Xubuntu, etc.), simply add the [wereturtle Launchpad PPA](http://launchpad.net/~wereturtle/+archive/ubuntu/ppa) to your system.  Open a terminal, and enter the following:
 
+```bash
     $ sudo add-apt-repository ppa:wereturtle/ppa
     $ sudo apt-get update
+```
 
-You can now install the ghostwriter package.  Please consult the Launchpad guide, [*Installing software from a PPA*](https://help.launchpad.net/Packaging/PPA/InstallingSoftware), for further details.
+You can now install the `ghostwriter` package:
+```bash
+    $ sudo apt-get install ghostwriter
+```
+Please consult the Launchpad guide, [*Installing software from a PPA*](https://help.launchpad.net/Packaging/PPA/InstallingSoftware), for further details.
 
 Also, be on the lookout for *ghostwriter* making its debut in the Debian and Ubuntu repositories in the future.  In the meantime, if you are a repository maintainer of any Linux distribution, I would appreciate your help in getting *ghostwriter* packaged.
 
 Finally, you may follow the build instructions below to install on Linux with the latest source code.
 
 **Note to Unity Users:** If you are running Ubuntu with the Unity desktop environment, you should be aware of a bug with how Qt 5 application menus are displayed in the global menu.  Please see [this bug in Launchpad](https://bugs.launchpad.net/appmenu-qt5/+bug/1380702).  At the moment, the shortcuts (such as Ctrl+C, Ctrl+V, etc.) in *ghostwriter's* menus are not available within Unity.  This is true of other Qt 5 applications.  A common workaround is to remove the appmenu-qt5 package.  To do so, open a terminal window, and type the following:
-
-    sudo apt-get remove appmenu-qt5
-
+```bash
+    $ sudo apt-get remove appmenu-qt5
+```
 This will fix the issue for all your Qt 5 applications, including *ghostwriter*.  However, it also places the menus for the application into the application's window, rather than into the global menu.
 
 An alternative workaround is to compile ghostwriter for yourself using Qt 4.8.  Shortcuts should properly work in the global menu for Qt 4.8 applications.  Regardless of your preferred workaround, this appmenu-qt5 bug should be fixed in the near future.  You can use the Launchpad link above to monitor the status of this bug.
@@ -62,18 +68,18 @@ Windows
 -------
 
 Open a DOS terminal window, and enter the following commands:
-
+```
     > cd <your_ghostwriter_folder_location>
     > qmake
-
+```
 The next command depends on whether you have chosen to use Qt with MinGW or with Microsoft's compiler.  If you are using MinGW, enter the following:
-
+```
     > mingw32-make
-
+```
 If you are using Microsoft's tools, enter the following:
-
+```
     > nmake release
-
+```
 Unless you have built *ghostwriter* as a standalone executable statically linked to your own build of Qt's source code, you will need to copy the necessary Qt (and MinGW) .dll files to the same location as `ghostwriter.exe` so that the executable can find the required libraries.
 
 Linux
@@ -97,20 +103,20 @@ Before proceeding, ensure that you have the following packages installed for Qt 
 Note that you may also compile and run against Qt 4.8;  however, Qt 5 is optimal for for its newer features.  Qt 4.8 has similar package dependencies to what is listed above.  You will have to find their Qt 4.8 equivalents in your Linux distribution's repository.
 
 Next, open a terminal window, and enter the following commands:
-
+```bash
     $ cd <your_ghostwriter_folder_location>
     $ qmake
     $ make
     $ make install
-
+```
 The last command will install *ghostwriter* on your machine.  If you need to install the application in an alternative location to `/usr/local`, enter the following command in lieu of the second command above, passing in the desired value for `PREFIX`:
-
+```bash
     $ qmake PREFIX=<your_install_path_here>
-
+```
 For example, to install under `/opt`, you would enter:
-
+```bash
     $ qmake PREFIX=/opt
-
+```
 **Note:**  If you see blank areas where there should be icons, then you are missing the Qt dependency for the SVG images.  On Debian and Ubuntu, this is libqt5svg5.  Other Linux distributions may vary on the exact package name.
 
 MacOS - Help Wanted!
@@ -118,37 +124,37 @@ MacOS - Help Wanted!
 
 Install [homebrew](http://brew.sh).  In a terminal:
 
-``` shell
-/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+```bash
+    $ /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 ```
 
 Then:
 
-``` shell
-$ brew install qt5 --with-qtwebkit # Compication takes a while, and drains the battery
-$ cp resources/mac/Info.plist resources/
-$ qmake -spec macx-g++
-$ make
+```bash
+    $ brew install qt5 --with-qtwebkit # Compication takes a while, and drains the battery
+    $ cp resources/mac/Info.plist resources/
+    $ qmake -spec macx-g++
+    $ make
 ```
 
 If you see:
 
-```
-fatal: Not a git repository (or any of the parent directories): .git
+```bash
+    fatal: Not a git repository (or any of the parent directories): .git
 ```
 
 Make sure you're cloned the repo, not just downloaded the src tarball.
 
 If you want *ghostwriter* in your applications folder, from the repo root do:
 
-``` shell
-$ sudo cp -R ./build/release/ghostwriter.app /Applications
+```bash
+    $ sudo cp -R ./build/release/ghostwriter.app /Applications
 ```
 
 To use *ghostwriter* from the command line (assuming `/usr/local/bin` is in your path and you've moved *ghostwriter* to the `/Applications` folder):
 
-``` shell
-$ sudo ln -s /Applications/ghostwriter.app/Contents/MacOS/ghostwriter /usr/local/bin
+```bash
+    $ sudo ln -s /Applications/ghostwriter.app/Contents/MacOS/ghostwriter /usr/local/bin
 ```
 
 
@@ -156,9 +162,9 @@ Command Line Usage
 ==================
 
 For terminal users, *ghostwriter* can be run from the command line.  In your terminal window, simply type the following:
-
+```bash
     $ ghostwriter myfile.md
-
+```
 where `myfile.md` is the path to your Markdown text file.
 
 Portable Mode
